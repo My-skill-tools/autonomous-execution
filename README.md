@@ -29,9 +29,10 @@
 
 ```text
 autonomous-execution/
-├── SKILL.md                 # Skill 核心定义与执行指引 (Frontmatter + 执行准则)
+├── SKILL.md                          # Skill 核心定义与执行指引 (Frontmatter + 执行准则)
 ├── scripts/
-│   └── setup_autonomous.py # 一键环境配置与规则注入脚本
+│   ├── setup_autonomous.py           # 一键环境配置与规则注入脚本
+│   └── install-antigravity-proxy.ps1 # Antigravity 代理启动器一键安装脚本 (Windows)
 ├── .gitignore
 └── README.md
 ```
@@ -61,6 +62,34 @@ python scripts/setup_autonomous.py --workspace
 ```
 
 将在项目工作区的 `.agents/rules/autonomous.md` 下生成对应规则。
+
+### 3. Antigravity 代理启动器 (Windows / Proxy Launcher)
+
+在中国大陆等需要代理的网络环境下，Antigravity 的后端 `language_server.exe` (Go 编译) 不会读取 Windows 系统代理设置，导致无法连接 Google API。本脚本通过快捷方式包装器在进程级别注入代理环境变量，只影响 Antigravity，不影响系统其他程序。
+
+**原理：**
+1. 生成一个 `.cmd` 启动器，在启动 `Antigravity.exe` 前设置 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 等环境变量
+2. 将开始菜单和桌面的 Antigravity 快捷方式指向该启动器
+3. Antigravity 及其所有子进程 (包括 `language_server.exe`) 继承代理设置
+4. 不设置用户级持久环境变量，浏览器、CLI 工具等不受影响
+
+**安装：**
+
+```powershell
+# 默认端口 7897 (Clash Verge mixed)
+powershell -ExecutionPolicy Bypass -File scripts/install-antigravity-proxy.ps1
+
+# 指定代理端口
+powershell -ExecutionPolicy Bypass -File scripts/install-antigravity-proxy.ps1 -ProxyPort 7890
+```
+
+安装后点击桌面或开始菜单的 Antigravity 图标即可自动走代理，无需开启 TUN 模式。
+
+**前置要求：**
+- 已安装 Google Antigravity
+- 代理客户端 (如 Clash Verge) 已运行并监听指定端口
+
+**卸载：** 将快捷方式目标改回 `Antigravity.exe` 原始路径，删除 `%USERPROFILE%\antigravity-proxy\` 文件夹即可。
 
 ---
 
